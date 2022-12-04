@@ -90,6 +90,7 @@ export class GrindingComponent implements OnInit, OnDestroy {
       others: new FormControl(0),
     }),
     playerLevel: new FormControl(null),
+    checkAll: new FormControl(true),
     filter: new FormGroup({
       여로: new FormControl(true),
       리버스: new FormControl(true),
@@ -154,9 +155,35 @@ export class GrindingComponent implements OnInit, OnDestroy {
           }, {}),
         ),
       )
-      .subscribe(patchFilter =>
-        this.formGroup.get('filter').patchValue(patchFilter),
-      );
+      .subscribe(patchFilter => {
+        this.formGroup.get('filter').patchValue(patchFilter)
+    });
+
+    this.formGroup
+      .get('checkAll')
+      .valueChanges.pipe(
+        takeUntil(this.subscription$),
+        map(checkedAll => 
+          Object.entries(this.formGroup.get('filter').value).reduce((obj, [field, checked]) => {
+            obj[field] = checkedAll;
+            return obj;
+          }, {})
+        ),
+      )
+      .subscribe(patchFilter => {
+        this.formGroup.get('filter').patchValue(patchFilter)
+      })
+
+    this.formGroup
+      .get('filter')
+      .valueChanges.pipe(takeUntil(this.subscription$))
+      .subscribe(value => {
+        const checkAllCheckbox = this.formGroup.get('checkAll')
+        const checkedAll = Object.values(value).every(checked => checked);
+        if (checkAllCheckbox.value !== checkedAll) {
+          checkAllCheckbox.patchValue(checkedAll, { emitEvent: false });
+        }
+      });
 
     this.formGroup.valueChanges
       .pipe(takeUntil(this.subscription$))
